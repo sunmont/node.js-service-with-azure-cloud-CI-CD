@@ -36,4 +36,28 @@ This repository demonstrates how to:
 ├── tsconfig.json  
 └── README.md  
 
+## 🌐 Prerequisites
+
+- Terraform >= 1.5
+- Azure CLI (`az`) and/or AWS CLI (`aws`)
+- kubectl
+- GitHub repository with Actions enabled
+
+---
+
+## 1️⃣ Provision Infrastructure with Terraform
+
+Edit `terraform/variables.tf`:
+
+```hcl
+variable "cloud" {
+  type    = string
+  default = "azure" # change to "aws" for AWS EKS
+}
+
+cd terraform
+terraform init
+terraform apply
+
+
 
