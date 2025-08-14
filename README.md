@@ -10,9 +10,9 @@ This repository demonstrates how to:
 ## 📂 Project Structure
 
 .
-├── terraform/ # Terraform IaC for AKS/EKS + ACR/ECR
-│ ├── main.tf
-│ ├── variables.tf
+├── terraform/ # Terraform IaC for AKS/EKS + ACR/ECR  
+│ ├── main.tf  
+│ ├── variables.tf  
 │ ├── outputs.tf
 │ └── provider.tf
 ├── k8s/ # Cloud-neutral Kubernetes manifests
@@ -35,3 +35,4 @@ This repository demonstrates how to:
 ├── package.json
 ├── tsconfig.json
 └── README.md
+
