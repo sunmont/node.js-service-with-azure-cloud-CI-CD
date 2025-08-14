@@ -13,26 +13,27 @@ This repository demonstrates how to:
 ├── terraform/ # Terraform IaC for AKS/EKS + ACR/ECR  
 │ ├── main.tf  
 │ ├── variables.tf  
-│ ├── outputs.tf
-│ └── provider.tf
-├── k8s/ # Cloud-neutral Kubernetes manifests
-│ ├── deployment.yaml
-│ ├── service.yaml
-│ └── pvc.yaml
-├── .github/
-│ └── workflows/
-│ └── deploy.yml # GitHub Actions pipeline
-├── Dockerfile
-├── docker-compose.yml
-├── .env
-├── src
-│ └── routes/
-|      ... 
-| └── auth.ts
-| └── config.ts
-| └── server.ts
-| ...
-├── package.json
-├── tsconfig.json
-└── README.md
+│ ├── outputs.tf  
+│ └── provider.tf  
+├── k8s/ # Cloud-neutral Kubernetes manifests  
+│ ├── deployment.yaml  
+│ ├── service.yaml  
+│ └── pvc.yaml  
+├── .github/  
+│ └── workflows/  
+│ └── deploy.yml # GitHub Actions pipeline  
+├── Dockerfile  
+├── docker-compose.yml  
+├── .env  
+├── src  
+│ └── routes/  
+|      ...   
+| └── auth.ts  
+| └── config.ts  
+| └── server.ts  
+| ...  
+├── package.json  
+├── tsconfig.json  
+└── README.md  
+
 
