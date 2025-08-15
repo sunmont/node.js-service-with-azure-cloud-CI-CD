@@ -26,13 +26,8 @@ This repo provisions AKS and EKS clusters using Terraform and sets up GitHub Act
 ## Hot Deploy
 Rolling updates ensure no service downtime during deployment.
 
-Edit `terraform/variables.tf`:
-
-```hcl
-variable "cloud" {
-  type    = string
-  default = "azure" # change to "aws" for AWS EKS
-}
+##
+Set cloud = "azure" or cloud = "aws" in infra/terraform.tfvars
 
 ## How to Run
 ```bash
@@ -67,6 +62,7 @@ terraform apply
 ├── package.json  
 ├── tsconfig.json  
 └── README.md  
+
 
 
 
