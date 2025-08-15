@@ -1,4 +1,4 @@
- Stage 1: Build the application
+# Stage 1: Build the application
 # Use a Node.js image with build tools
 FROM node:20-alpine AS build
 
@@ -35,3 +35,4 @@ EXPOSE 3000
 
 # Run the application
 CMD ["node", "dist/server.js"]
+
