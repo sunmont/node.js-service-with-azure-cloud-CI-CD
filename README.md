@@ -79,19 +79,17 @@ After terraform apply, check outputs (terraform output -json) to fill these secr
 
 🚀 How to use
 
-Provision infra
-
-cd infra
+1. Provision infra
+cd terraform
 cp terraform.tfvars.example terraform.tfvars
 # edit terraform.tfvars with your creds and set cloud = "azure" or "aws"
 terraform init
 terraform apply
 
+2. Set repo secrets (table above).
+3. Push to main
+    GitHub Actions will build → push → apply manifests → rolling update (hot deploy, zero downtime).
 
-Set repo secrets (table above).
-
-Push to main
-GitHub Actions will build → push → apply manifests → rolling update (hot deploy, zero downtime).
 
 
 
