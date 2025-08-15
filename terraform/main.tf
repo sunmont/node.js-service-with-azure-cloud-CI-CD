@@ -1,100 +1,48 @@
-terraform {
-  required_version = ">= 1.4.0"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.0"
-    }
-  }
+########################################
+# main.tf — Cross-cloud Kubernetes wiring
+########################################
+
+locals {
+  is_azure = var.cloud == "azure"
+  is_aws   = var.cloud == "aws"
 }
 
-provider "azurerm" {
-  features {}
+# AKS <-> ACR image pull permission (Azure only)
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  count                = local.is_azure ? 1 : 0
+  scope                = azurerm_container_registry.acr[0].id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks[0].kubelet_identity[0].object_id
 }
 
-provider "aws" {
-  region = var.aws_region
+# EKS auth data (AWS only)
+data "aws_eks_cluster" "eks" {
+  count = local.is_aws ? 1 : 0
+  name  = module.eks[0].cluster_name
 }
 
-# --- Azure AKS ---
-resource "azurerm_resource_group" "rg" {
-  name     = "multi-cloud-k8s-rg"
-  location = var.azure_location
+data "aws_eks_cluster_auth" "eks" {
+  count = local.is_aws ? 1 : 0
+  name  = module.eks[0].cluster_name
 }
 
-resource "azurerm_kubernetes_cluster" "aks" {
-  name                = "multi-cloud-aks"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  dns_prefix          = "multicloud"
+# Kubernetes provider configured for either AKS or EKS
+provider "kubernetes" {
+  host = local.is_azure
+    ? azurerm_kubernetes_cluster.aks[0].kube_config[0].host
+    : data.aws_eks_cluster.eks[0].endpoint
 
-  default_node_pool {
-    name       = "default"
-    node_count = 2
-    vm_size    = "Standard_DS2_v2"
-  }
+  client_certificate = local.is_azure
+    ? base64decode(azurerm_kubernetes_cluster.aks[0].kube_config[0].client_certificate)
+    : null
 
-  identity {
-    type = "SystemAssigned"
-  }
-}
+  client_key = local.is_azure
+    ? base64decode(azurerm_kubernetes_cluster.aks[0].kube_config[0].client_key)
+    : null
 
-# --- AWS EKS ---
-resource "aws_eks_cluster" "eks" {
-  name     = "multi-cloud-eks"
-  role_arn = aws_iam_role.eks_role.arn
+  cluster_ca_certificate = local.is_azure
+    ? base64decode(azurerm_kubernetes_cluster.aks[0].kube_config[0].cluster_ca_certificate)
+    : base64decode(data.aws_eks_cluster.eks[0].certificate_authority[0].data)
 
-  vpc_config {
-    subnet_ids = var.aws_subnet_ids
-  }
-
-  depends_on = [aws_iam_role_policy_attachment.eks_policy_attach]
-}
-
-resource "aws_iam_role" "eks_role" {
-  name = "eksClusterRole"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole",
-        Principal = {
-          Service = "eks.amazonaws.com"
-        },
-        Effect = "Allow"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "eks_policy_attach" {
-  role       = aws_iam_role.eks_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-}
-
-# Output kubeconfigs for GitHub Actions
-output "aks_kube_config" {
-  value     = azurerm_kubernetes_cluster.aks.kube_config_raw
-  sensitive = true
-}
-
-output "eks_endpoint" {
-  value = aws_eks_cluster.eks.endpoint
-}
-
-output "eks_certificate_authority" {
-  value = aws_eks_cluster.eks.certificate_authority[0].data
-}
-
-output "eks_name" {
-  value = aws_eks_cluster.eks.name
+  token = local.is_aws ? data.aws_eks_cluster_auth.eks[0].token : null
 }
