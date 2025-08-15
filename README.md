@@ -64,16 +64,16 @@ terraform apply
 └── README.md  
 
 GitHub Secrets to set
-Secret	For	Example
-CLOUD	both	azure or aws
-AZURE_CREDENTIALS	Azure login	JSON from az ad sp create-for-rbac --sdk-auth
-AZURE_ACR_NAME	ACR	myappacr123
-AZURE_RG	AKS RG	From Terraform output (e.g., myapp-rg)
-AZURE_AKS_NAME	AKS name	From Terraform output (e.g., myapp-aks)
-AWS_ACCESS_KEY_ID	AWS	Your IAM key
-AWS_SECRET_ACCESS_KEY	AWS	Your IAM secret
-AWS_EKS_NAME	EKS cluster	From TF output (e.g., myapp-eks)
-AWS_ECR_REPO_NAME	ECR repo name	From TF (e.g., myapp-repo)
+Secret	              For	          Example
+CLOUD	                both	        azure or aws
+AZURE_CREDENTIALS    	Azure login	  JSON from az ad sp create-for-rbac --sdk-auth
+AZURE_ACR_NAME	      ACR	          myappacr123
+AZURE_RG	            AKS RG	      From Terraform output (e.g., myapp-rg)
+AZURE_AKS_NAME	      AKS name	    From Terraform output (e.g., myapp-aks)
+AWS_ACCESS_KEY_ID    	AWS	          Your IAM key
+AWS_SECRET_ACCESS_KEY	AWS	          Your IAM secret
+AWS_EKS_NAME	        EKS cluster	  From TF output (e.g., myapp-eks)
+AWS_ECR_REPO_NAME	    ECR repo name	From TF (e.g., myapp-repo)
 
 After terraform apply, check outputs (terraform output -json) to fill these secrets accurately.
 
@@ -92,6 +92,7 @@ Set repo secrets (table above).
 
 Push to main
 GitHub Actions will build → push → apply manifests → rolling update (hot deploy, zero downtime).
+
 
 
 
