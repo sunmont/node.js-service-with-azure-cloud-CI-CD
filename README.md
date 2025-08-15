@@ -41,7 +41,8 @@ terraform apply
 │ ├── main.tf  
 │ ├── variables.tf  
 │ ├── outputs.tf  
-│ └── provider.tf  
+│ └── provider.tf
+|     ... 
 ├── k8s/ # Cloud-neutral Kubernetes manifests  
 │ ├── deployment.yaml  
 │ ├── service.yaml  
@@ -89,6 +90,7 @@ terraform apply
 2. Set repo secrets (table above).
 3. Push to main
     GitHub Actions will build → push → apply manifests → rolling update (hot deploy, zero downtime).
+
 
 
 
