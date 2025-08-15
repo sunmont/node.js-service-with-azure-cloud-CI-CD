@@ -1,0 +1,91 @@
+name: Build & Hot-Deploy (AKS/EKS)
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: us-east-1
+  AZURE_REGION: eastus
+  # Use one repo-level secret to toggle cloud: 'azure' or 'aws'
+  CLOUD: ${{ secrets.CLOUD }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---------- Azure ACR ----------
+      - name: Azure Login
+        if: env.CLOUD == 'azure'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          # AZURE_CREDENTIALS is JSON from: az ad sp create-for-rbac --sdk-auth
+
+      - name: ACR Login
+        if: env.CLOUD == 'azure'
+        run: az acr login --name ${{ secrets.AZURE_ACR_NAME }}
+
+      - name: Build & Push (ACR)
+        if: env.CLOUD == 'azure'
+        run: |
+          IMAGE=${{ secrets.AZURE_ACR_NAME }}.azurecr.io/myapp:${{ github.sha }}
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      # ---------- AWS ECR ----------
+      - name: Configure AWS
+        if: env.CLOUD == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        if: env.CLOUD == 'aws'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push (ECR)
+        if: env.CLOUD == 'aws'
+        run: |
+          REG="${{ steps.login-ecr.outputs.registry }}"
+          IMAGE="$REG/${{ secrets.AWS_ECR_REPO_NAME }}:${{ github.sha }}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      # ---------- Configure kubectl ----------
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Get AKS credentials
+        if: env.CLOUD == 'azure'
+        run: az aks get-credentials --resource-group ${{ secrets.AZURE_RG }} --name ${{ secrets.AZURE_AKS_NAME }} --overwrite-existing
+
+      - name: Get EKS credentials
+        if: env.CLOUD == 'aws'
+        run: aws eks update-kubeconfig --name ${{ secrets.AWS_EKS_NAME }} --region ${{ env.AWS_REGION }}
+
+      # ---------- Deploy (hot, rolling update) ----------
+      - name: Render deployment with image
+        run: |
+          sed "s|<IMAGE_URL>|${IMAGE}|g" k8s/deployment.yaml > k8s/deployment.rendered.yaml
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/pvc.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/deployment.rendered.yaml
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/myapp --timeout=5m
